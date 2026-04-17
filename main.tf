@@ -20,6 +20,8 @@ resource "qumulo_filesystem_azure" "spoke2" {
 
   subnet_id = "/subscriptions/18854c3b-da18-4bd5-8449-587ebb392144/resourceGroups/engineering-cnq-vnet/providers/Microsoft.Network/virtualNetworks/engineering-cnq-vnet/subnets/engineering-cnq-subnet"
 
+  allow_cidrs = ["10.0.0.0/16"]
+
   node_count           = 3
   vm_type              = "Standard_L8s_v3"
   admin_password       = "Admin123!"
