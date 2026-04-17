@@ -6,7 +6,7 @@ pr:
       - main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: windows-latest
 
 variables:
   terraformVersion: '1.9.8'
@@ -15,23 +15,25 @@ steps:
   - checkout: self
     displayName: Checkout repository
 
-  - script: |
-      set -euo pipefail
-      INSTALL_DIR="$HOME/.local/bin"
-      mkdir -p "$INSTALL_DIR"
-      curl -fsSL "https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip" -o terraform.zip
-      unzip -o terraform.zip -d "$INSTALL_DIR"
-      rm terraform.zip
-      echo "##vso[task.prependpath]$INSTALL_DIR"
-      "$INSTALL_DIR/terraform" version
+  - pwsh: |
+      $ErrorActionPreference = 'Stop'
+      $version = $env:TF_VERSION
+      $installDir = Join-Path $env:USERPROFILE 'terraform'
+      New-Item -ItemType Directory -Force -Path $installDir | Out-Null
+      $zip = Join-Path $env:TEMP 'terraform.zip'
+      Invoke-WebRequest -Uri "https://releases.hashicorp.com/terraform/$version/terraform_${version}_windows_amd64.zip" -OutFile $zip
+      Expand-Archive -Path $zip -DestinationPath $installDir -Force
+      Remove-Item $zip
+      Write-Host "##vso[task.prependpath]$installDir"
+      & (Join-Path $installDir 'terraform.exe') version
     displayName: Install Terraform $(terraformVersion)
     env:
       TF_VERSION: $(terraformVersion)
 
-  - script: terraform init -upgrade -input=false -no-color
+  - pwsh: terraform init -upgrade -input=false -no-color
     displayName: terraform init -upgrade
     workingDirectory: $(Build.SourcesDirectory)
 
-  - script: terraform plan -input=false -no-color
+  - pwsh: terraform plan -input=false -no-color
     displayName: terraform plan
     workingDirectory: $(Build.SourcesDirectory)
