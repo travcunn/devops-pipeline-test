@@ -8,16 +8,15 @@ pr:
 pool:
   vmImage: windows-latest
 
-variables:
-  terraformVersion: '1.9.8'
-
 steps:
   - checkout: self
     displayName: Checkout repository
 
   - pwsh: |
       $ErrorActionPreference = 'Stop'
-      $version = $env:TF_VERSION
+      $meta = Invoke-RestMethod -Uri 'https://api.releases.hashicorp.com/v1/releases/terraform/latest'
+      $version = $meta.version
+      Write-Host "Latest Terraform version: $version"
       $installDir = Join-Path $env:USERPROFILE 'terraform'
       New-Item -ItemType Directory -Force -Path $installDir | Out-Null
       $zip = Join-Path $env:TEMP 'terraform.zip'
@@ -26,9 +25,7 @@ steps:
       Remove-Item $zip
       Write-Host "##vso[task.prependpath]$installDir"
       & (Join-Path $installDir 'terraform.exe') version
-    displayName: Install Terraform $(terraformVersion)
-    env:
-      TF_VERSION: $(terraformVersion)
+    displayName: Install Terraform (latest)
 
   - pwsh: terraform init -upgrade -input=false -no-color
     displayName: terraform init -upgrade
